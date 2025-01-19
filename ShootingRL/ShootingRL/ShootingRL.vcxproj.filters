@@ -39,6 +39,9 @@
     <ClCompile Include="..\external\imgui\imgui-SFML.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="LevelData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\imgui\imconfig.h">
@@ -46,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="..\external\imgui\imconfig-SFML.h">
       <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelData.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
