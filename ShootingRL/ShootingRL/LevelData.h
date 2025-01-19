@@ -30,6 +30,7 @@ public:
 	// Core Functions
 	void Update(float dt);
 	void Draw(sf::RenderWindow& window);
+	bool IsSimulationRunning();
 	// Level Editing Functions
 	void PreviewMod(sf::RenderWindow& window);
 	void SetPreviewLineStart(glm::vec2 start);
@@ -40,6 +41,7 @@ public:
 	// ImGui Functions
 	void SelectModWindow();
 	void SaveLoadWindow();
+	void RunSimulation();
 	// Input
 	void ResetInput();
 private:
@@ -47,13 +49,25 @@ private:
 	sf::RectangleShape previewLine;
 	bool previewLineEnabled = false;
 	sf::Event mousePrevEvent;
-	bool ImGuiWindowHovered = false;
 	ShapeType currentMode = ShapeType::None;
 	//
-	bool LeftMouseButtonClicked = false;
-	bool RightMouseButtonClicked = false;
+	bool leftMouseButtonClicked = false;
+	bool rightMouseButtonClicked = false;
 	//
 	bool isImGuiHovered = false;
+	bool runSimulation = false;
+	//
+	std::string lastLoadedFile = "";
+
+
+
+
+
+
+
+
+	std::vector<sf::CircleShape> circle;
+	bool DrawCircle = false;
 };
 
 namespace sf {

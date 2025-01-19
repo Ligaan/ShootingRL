@@ -10,10 +10,14 @@ int main()
     LevelData levelData;
 
     sf::Clock clock;
+    sf::Time timer;
     while (window.isOpen())
     {
-        ImGui::SFML::Update(window, clock.restart());
+
+        ImGui::SFML::Update(window,timer = clock.restart());
         levelData.ResetInput();
+        if(levelData.IsSimulationRunning())
+        levelData.Update(timer.asSeconds());
         ImGui::Begin("Hello, world!");
         for (auto event = sf::Event(); window.pollEvent(event);)
         {
@@ -25,8 +29,10 @@ int main()
             }
             levelData.CheckWindowEvent(event,window);
         }
+        if(!levelData.IsSimulationRunning())
         levelData.SelectModWindow();
         levelData.SaveLoadWindow();
+        levelData.RunSimulation();
         ImGui::End();
 
         window.clear();
