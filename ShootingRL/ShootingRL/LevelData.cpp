@@ -1,6 +1,7 @@
 #include "LevelData.h"
 #include "glm/gtx/vector_angle.hpp"
 #include "algorithm"
+#include "fstream"
 
 // Helper function to convert enum values to strings for ImGui display
 const char* ShapeTypeToString(ShapeType shape) {
@@ -28,6 +29,25 @@ LevelData::LevelData()
 {
 	ResetPreviewLine();
 	mousePrevEvent.type = sf::Event::MouseButtonReleased;
+}
+void LevelData::SaveData(const std::string& filename)
+{
+	{
+		std::ofstream os(std::string("../assets/levels/") + filename + std::string(".json"));
+		cereal::JSONOutputArchive archive(os);
+		archive(lines);
+	}
+}
+void LevelData::LoadData(const std::string& filename)
+{
+	std::ifstream is(std::string("../assets/levels/") + filename +std::string(".json"));
+	if (!is.is_open())
+	{
+		throw std::runtime_error("Failed to open file for loading data.");
+	}
+
+	cereal::JSONInputArchive archive(is);
+	archive(lines);  // Load the `lines` member variable
 }
 void LevelData::Draw(sf::RenderWindow& window)
 {
@@ -204,6 +224,24 @@ void LevelData::SelectModWindow()
 
 	// Display the current selected shape type
 	ImGui::Text("Selected Shape: %s", ShapeTypeToString(currentMode));
+}
+
+void LevelData::SaveLoadWindow()
+{
+	static char fileName[256] = "";  // Buffer to store the file name (you can adjust the size as needed)
+
+	// Input text for the file name
+	ImGui::InputText("File Name", fileName, IM_ARRAYSIZE(fileName));
+
+	if (ImGui::Button("Save")) {
+		// Use the file name from the input field to save
+		SaveData(std::string(fileName));  // Pass the file name to the Save function
+	}
+
+	if (ImGui::Button("Load")) {
+		// Use the file name from the input field to load
+		LoadData(std::string(fileName));  // Pass the file name to the Load function
+	}
 }
 
 void LevelData::ResetInput()

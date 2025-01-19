@@ -30,7 +30,9 @@
 ////////////////////////////////////////////////////////////
 #include <SFML/Graphics/Export.hpp>
 #include <SFML/Graphics/Shape.hpp>
-
+#include "cereal/archives/json.hpp"
+#include "cereal/types/vector.hpp"
+#include "cereal/types/utility.hpp"
 
 namespace sf
 {
