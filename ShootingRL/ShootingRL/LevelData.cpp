@@ -2,6 +2,7 @@
 #include "glm/gtx/vector_angle.hpp"
 #include "algorithm"
 #include "fstream"
+#include <iostream>
 
 #include "Utilities.h"
 
@@ -51,13 +52,6 @@ void LevelData::Update(float dt)
 void LevelData::Draw(sf::RenderWindow& window)
 {
 	////
-
-	//Buffer access
-	//sf::Image screenshot = window.capture();
-
-	// Save the image (optional)
-	//screenshot.saveToFile("screenshot.png");
-
 	sf::Vector2 mousePos = sf::Mouse::getPosition(window);
 
 	PreviewMod(window);

@@ -29,8 +29,6 @@ int main()
             levelData.CheckWindowEvent(event,window);
         }
 
-        if(levelData.IsSimulationRunning())
-        levelData.Update(timer.asSeconds());
         if(!levelData.IsSimulationRunning())
         levelData.SelectModWindow();
         levelData.SaveLoadWindow();
@@ -41,6 +39,27 @@ int main()
         levelData.Draw(window);
         ImGui::SFML::Render(window);
         window.display();
+
+        //temporary way to access the screen buffer
+        {
+            sf::Texture texture;
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                // Capture the window contents to the texture
+                texture.create(window.getSize().x, window.getSize().y);
+                texture.update(window);
+
+                // Create an image from the texture
+                sf::Image screenshot = texture.copyToImage();
+
+                // Save the image to a file (optional)
+                screenshot.saveToFile("../assets/screenshot.png");
+            }
+        }
+
+        if (levelData.IsSimulationRunning())
+            levelData.Update(timer.asSeconds());
+
     }
 
     ImGui::SFML::Shutdown();
