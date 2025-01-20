@@ -12,13 +12,7 @@
 #include "cereal/types/vector.hpp"
 #include "cereal/types/utility.hpp"
 
-enum class ShapeType {
-	EnvironmentLine,
-	StaticTarget,
-	MovingTarget,
-	Player,
-	None
-};
+#include "EnviromentObjectsType.h"
 
 class LevelData
 {
@@ -58,16 +52,6 @@ private:
 	bool runSimulation = false;
 	//
 	std::string lastLoadedFile = "";
-
-
-
-
-
-
-
-
-	std::vector<sf::CircleShape> circle;
-	bool DrawCircle = false;
 };
 
 namespace sf {

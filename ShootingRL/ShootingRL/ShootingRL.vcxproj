@@ -155,7 +155,9 @@
   <ItemGroup>
     <ClInclude Include="..\external\imgui\imconfig-SFML.h" />
     <ClInclude Include="..\external\imgui\imconfig.h" />
+    <ClInclude Include="EnviromentObjectsType.h" />
     <ClInclude Include="LevelData.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

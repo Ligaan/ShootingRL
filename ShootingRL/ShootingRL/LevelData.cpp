@@ -3,131 +3,7 @@
 #include "algorithm"
 #include "fstream"
 
-// Helper function to convert enum values to strings for ImGui display
-const char* ShapeTypeToString(ShapeType shape) {
-	switch (shape) {
-	case ShapeType::EnvironmentLine: return "EnvironmentLine";
-	case ShapeType::StaticTarget:    return "StaticTarget";
-	case ShapeType::MovingTarget:    return "MovingTarget";
-	case ShapeType::Player:          return "Player";
-	case ShapeType::None:            return "None";
-	default:                         return "Unknown";
-	}
-}
-
-// Helper function to convert string to enum
-ShapeType StringToShapeType(const std::string& str) {
-	if (str == "EnvironmentLine") return ShapeType::EnvironmentLine;
-	if (str == "StaticTarget")    return ShapeType::StaticTarget;
-	if (str == "MovingTarget")    return ShapeType::MovingTarget;
-	if (str == "Player")          return ShapeType::Player;
-	if (str == "None")            return ShapeType::None;
-	return ShapeType::None;
-}
-
-bool areRectanglesOverlapping(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
-	return rect1.getGlobalBounds().intersects(rect2.getGlobalBounds());
-}
-
-// Function to get the angle of a point relative to the center
-float angleFromCenter(const sf::Vector2f& point, const sf::Vector2f& center) {
-	return std::atan2(point.y - center.y, point.x - center.x);
-}
-
-std::vector<sf::Vector2f> getRectangleCorners(const sf::RectangleShape& rect) {
-	sf::FloatRect bounds = rect.getGlobalBounds();
-	sf::Transform transform = rect.getTransform();
-
-	// Get the corners of the rectangle in world space after transformation
-	std::vector<sf::Vector2f> corners = {
-		transform.transformPoint(0.f, 0.f),                                      // Top-left
-		transform.transformPoint(bounds.width, 0.f),                             // Top-right
-		transform.transformPoint(bounds.width, bounds.height),                   // Bottom-right
-		transform.transformPoint(0.f, bounds.height)                             // Bottom-left
-	};
-
-	return corners;
-}
-
-
-// LINE/LINE
-std::pair<bool, glm::vec2> lineLine(glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 D) {
-
-	// calculate the direction of the lines
-	float uA = ((D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x)) / ((D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y));
-	float uB = ((B.x - A.x) * (A.y - C.y) - (B.y - A.x) * (A.y - C.x)) / ((D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y));
-
-	// if uA and uB are between 0-1, lines are colliding
-	if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-
-		// optionally, draw a circle where the lines meet
-		float intersectionX = A.x + (uA * (B.x - A.x));
-		float intersectionY = A.y + (uA * (B.y - A.y));
-
-		return std::make_pair(true, glm::vec2(intersectionX, intersectionY));
-	}
-	return std::make_pair(false, glm::vec2(0.0f));
-}
-// LINE/RECTANGLE
-glm::vec2 lineRect(glm::vec2 start, glm::vec2 end, glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 D) {
-
-	// check if the line has hit any of the rectangle's sides
-	// uses the Line/Line function below
-	std::pair<bool, glm::vec2> left = lineLine(start, end, A, B);
-	std::pair<bool, glm::vec2> right = lineLine(start, end, B, C);
-	std::pair<bool, glm::vec2> top = lineLine(start, end, C, D);
-	std::pair<bool, glm::vec2> bottom = lineLine(start, end, D, A);
-
-	// Initially set the closest distance to a very large value
-	float closestDistance = std::numeric_limits<float>::max();
-	glm::vec2 closestPoint;
-
-	// Check the left intersection
-	if (left.first) {
-		float dist = glm::distance2(start, left.second);
-		if (dist < closestDistance) {
-			closestDistance = dist;
-			closestPoint = left.second;
-		}
-	}
-
-	// Check the right intersection
-	if (right.first) {
-		float dist = glm::distance2(start, right.second);
-		if (dist < closestDistance) {
-			closestDistance = dist;
-			closestPoint = right.second;
-		}
-	}
-
-	// Check the top intersection
-	if (top.first) {
-		float dist = glm::distance2(start, top.second);
-		if (dist < closestDistance) {
-			closestDistance = dist;
-			closestPoint = top.second;
-		}
-	}
-
-	// Check the bottom intersection
-	if (bottom.first) {
-		float dist = glm::distance2(start, bottom.second);
-		if (dist < closestDistance) {
-			closestDistance = dist;
-			closestPoint = bottom.second;
-		}
-	}
-
-	// If we found any intersection, return the result
-	return  closestPoint;
-}
-
-
-
-
-
-///////////////////////
-
+#include "Utilities.h"
 
 LevelData::LevelData()
 {
@@ -196,51 +72,29 @@ void LevelData::Update(float dt)
 		previewLine.setRotation(angleDegrees);
 
 
-		circle.clear();
-		circle.push_back(sf::CircleShape());
-		circle[circle.size() - 1].setPosition(sf::Vector2f(start.x, start.y));
-		circle[circle.size() - 1].setRadius(10.0f);
-		circle[circle.size() - 1].setOrigin(sf::Vector2f(5.0f, 5.0f));
-		circle.push_back(sf::CircleShape());
-		circle[circle.size() - 1].setPosition(sf::Vector2f(end.x, end.y));
-		circle[circle.size() - 1].setRadius(10.0f);
-		circle[circle.size() - 1].setOrigin(sf::Vector2f(5.0f, 5.0f));
-		//circle.setRadius(20.0f);
-		DrawCircle = false;
-		glm::vec2 newEnd;
-
-
-		std::vector<sf::Vector2f> corners,prevLine = getRectangleCorners(previewLine);
+		std::vector<sf::Vector2f> corners, prevLine = GetRectangleCorners(previewLine);
 		for (auto line : lines) {
 			if (line.second != ShapeType::Player) {
-				//adjustRectangleSize(previewLine, line.first, 2.0f);
-				if (areRectanglesOverlapping(previewLine, line.first)) {
-					DrawCircle = true;
-					corners = getRectangleCorners(line.first);
-					end = lineRect(start,
-						end,
-						glm::vec2(corners[0].x, corners[0].y),
-						glm::vec2(corners[1].x, corners[1].y),
-						glm::vec2(corners[2].x, corners[2].y),
-						glm::vec2(corners[3].x, corners[3].y));
-					circle.push_back(sf::CircleShape());
-					circle[circle.size() - 1].setPosition(sf::Vector2f(end.x, end.y));
-					circle[circle.size() - 1].setRadius(10.0f);
-					circle[circle.size() - 1].setOrigin(sf::Vector2f(5.0f, 5.0f));
-					// 
-					// 
-					//glm::vec2 v1Normalized(1.0f, 0.0f);
-					//glm::vec2 v2Normalized = glm::normalize(end - start);
+				corners = GetRectangleCorners(line.first);
+				if (Physics::LineRect(start,
+					end,
+					glm::vec2(corners[0].x, corners[0].y),
+					glm::vec2(corners[1].x, corners[1].y),
+					glm::vec2(corners[2].x, corners[2].y),
+					glm::vec2(corners[3].x, corners[3].y), end)) {
 
-					//// Calculate the angle in radians
+					glm::vec2 v1Normalized(1.0f, 0.0f);
+					glm::vec2 v2Normalized = glm::normalize(end - start);
 
-					//float angle = glm::orientedAngle(v1Normalized, v2Normalized);
+					// Calculate the angle in radians
 
-					//// Convert radians to degrees
-					//float angleDegrees = glm::degrees(angle);
+					float angle = glm::orientedAngle(v1Normalized, v2Normalized);
 
-					//previewLine.setSize(sf::Vector2(glm::length(end - start), 1.0f));
-					//previewLine.setRotation(angleDegrees);
+					// Convert radians to degrees
+					float angleDegrees = glm::degrees(angle);
+
+					previewLine.setSize(sf::Vector2(glm::length(end - start), 1.0f));
+					previewLine.setRotation(angleDegrees);
 				}
 			}
 		}
@@ -265,10 +119,6 @@ void LevelData::Draw(sf::RenderWindow& window)
 	for (auto line : lines) {
 		window.draw(line.first);
 	}
-	if (DrawCircle)
-		for (auto cir : circle) {
-			window.draw(cir);
-		}
 }
 
 bool LevelData::IsSimulationRunning()
@@ -295,7 +145,7 @@ void LevelData::PreviewMod(sf::RenderWindow& window)
 
 		sf::Vector2 mousePos = sf::Mouse::getPosition(window);
 		previewLine.setPosition(sf::Vector2f(mousePos) - sf::Vector2(2.5f, 2.5f));
-		previewLine.setSize(sf::Vector2(5.0f, 5.0f));
+		previewLine.setSize(sf::Vector2(10.0f, 10.0f));
 		previewLine.setRotation(0.0f);
 		previewLine.setFillColor(sf::Color::Green);
 		break;
@@ -307,7 +157,7 @@ void LevelData::PreviewMod(sf::RenderWindow& window)
 
 		sf::Vector2 mousePos = sf::Mouse::getPosition(window);
 		previewLine.setPosition(sf::Vector2f(mousePos) - sf::Vector2(2.5f, 2.5f));
-		previewLine.setSize(sf::Vector2(5.0f, 5.0f));
+		previewLine.setSize(sf::Vector2(10.0f, 10.0f));
 		previewLine.setRotation(0.0f);
 		previewLine.setFillColor(sf::Color::Red);
 		break;
@@ -319,7 +169,7 @@ void LevelData::PreviewMod(sf::RenderWindow& window)
 
 		sf::Vector2 mousePos = sf::Mouse::getPosition(window);
 		previewLine.setPosition(sf::Vector2f(mousePos) - sf::Vector2(2.5f, 2.5f));
-		previewLine.setSize(sf::Vector2(5.0f, 5.0f));
+		previewLine.setSize(sf::Vector2(10.0f, 10.0f));
 		previewLine.setRotation(0.0f);
 		previewLine.setFillColor(sf::Color::Blue);
 		break;
@@ -415,13 +265,13 @@ void LevelData::SelectModWindow()
 	isImGuiHovered = ImGui::IsWindowHovered() || ImGui::IsAnyItemHovered();
 	// Create a combo box to select ShapeType
 	const char* shapeNames[] = { "EnvironmentLine", "StaticTarget", "MovingTarget", "Player", "None" };
-	const char* currentShapeName = ShapeTypeToString(currentMode);
+	const char* currentShapeName = ImGui::ShapeTypeToString(currentMode);
 
 	if (ImGui::BeginCombo("ShapeType", currentShapeName)) {
 		for (int i = 0; i < 5; ++i) {
-			bool isSelected = (currentMode == StringToShapeType(shapeNames[i]));
+			bool isSelected = (currentMode == ImGui::StringToShapeType(shapeNames[i]));
 			if (ImGui::Selectable(shapeNames[i], isSelected)) {
-				currentMode = StringToShapeType(shapeNames[i]);
+				currentMode = ImGui::StringToShapeType(shapeNames[i]);
 				ResetPreviewLine();
 			}
 		}
@@ -429,7 +279,7 @@ void LevelData::SelectModWindow()
 	}
 
 	// Display the current selected shape type
-	ImGui::Text("Selected Shape: %s", ShapeTypeToString(currentMode));
+	ImGui::Text("Selected Shape: %s", ImGui::ShapeTypeToString(currentMode));
 }
 
 void LevelData::SaveLoadWindow()
