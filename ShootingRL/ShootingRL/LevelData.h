@@ -73,6 +73,17 @@ private:
 	//Debug
 	bool debugLine = false;
 	float timer = 0.0f;
+	float simulationDeadline = 60.0f;
+	//Rewards
+	float winReward = 1000.0f;
+	float loseReward = -1000.0f;
+	float timeMultiplier = 1.0f;
+	float moveReward = -5.0f;
+	float rotateReward = -1.0f;
+	float collideReward = -100.0f;
+	float hitStaticTargetReward = 100.0f;
+	float hitMovingTargetReward = 200.0f;
+	float missTargetReward = -10.0f;
 };
 
 namespace sf {

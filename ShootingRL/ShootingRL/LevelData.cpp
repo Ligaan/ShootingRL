@@ -407,33 +407,33 @@ float LevelData::PlayerMovement(float dt)
 	sf::Vector2f originalPosition = lines[playerIndex].first.getPosition();
 	if (up) {
 		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(0.0, -1.0f) * movementValue * dt);
-		score += -5.0f; //Change this later;
+		score += moveReward;
 	}
 	if (down) {
 		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(0.0, 1.0f) * movementValue * dt);
-		score += -5.0f;//Change this later;
+		score += moveReward;
 	}
 	if (left) {
 		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(-1.0, 0.0f) * movementValue * dt);
-		score += -5.0f; //Change this later;
+		score += moveReward;
 	}
 	if (right) {
 		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(1.0, 0.0f) * movementValue * dt);
-		score += -5.0f; //Change this later;
+		score += moveReward;
 	}
 	if (rotateLeft) {
 		lines[playerIndex].first.setRotation(lines[playerIndex].first.getRotation() + 1.0f * rotationForce * dt);
-		score += -1.0f;
+		score += rotateReward;
 	}
 	if (rotateRight) {
 		lines[playerIndex].first.setRotation(lines[playerIndex].first.getRotation() - 1.0f * rotationForce * dt);
-		score += -1.0f;
+		score += rotateReward;
 	}
 
 	for (auto line : lines) {
 		if (line.second != ShapeType::Player) {
 			if (Physics::RectanglesIntersect(lines[playerIndex].first, line.first)) {
-				score += -100.0f;
+				score += collideReward;
 				lines[playerIndex].first.setPosition(originalPosition);
 				lines[playerIndex].first.setRotation(originalOrientation);
 				break;
@@ -483,14 +483,14 @@ float LevelData::CheckForWinLose(float dt)
 {
 	if (FindFirstEnemyIntex() == -1) {
 		runSimulation = false;
-		return 1000.0f;
+		return winReward;
 	}
 	timer += dt;
-	if (timer == 60.0f) {
+	if (timer == simulationDeadline) {
 		runSimulation = false;
-		return -1000.0f;
+		return loseReward;
 	}
-	return -timer;
+	return -timer*timeMultiplier;
 }
 
 float LevelData::CheckTarget()
@@ -498,23 +498,23 @@ float LevelData::CheckTarget()
 	if (lastTargetIndex != -1) {
 		switch (lines[lastTargetIndex].second) {
 		case ShapeType::EnvironmentLine: {
-			return -100.0f; //Change it later;
+			return missTargetReward;
 			break;
 		}
 		case ShapeType::StaticTarget: {
 			lines.erase(lines.begin() + lastTargetIndex);
 			playerIndex = FindPlayerIndex();
-			return 100.0f; //Change it later;
+			return hitStaticTargetReward;
 			break;
 		}
 		case ShapeType::MovingTarget: {
 			lines.erase(lines.begin() + lastTargetIndex);
 			playerIndex = FindPlayerIndex();
-			return 200.0f; //Change it later;
+			return hitMovingTargetReward;
 			break;
 		}
 		default: {
-			return -100.0f; //Change it later;
+			return missTargetReward;
 			break;
 		}
 		}
