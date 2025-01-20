@@ -32,26 +32,47 @@ public:
 	void CheckWindowEvent(sf::Event& event, sf::RenderWindow& window);
 	void ResetPreviewLine();
 	int FindPlayerIndex();
+	int FindFirstEnemyIntex();
 	// ImGui Functions
 	void SelectModWindow();
 	void SaveLoadWindow();
 	void RunSimulation();
 	// Input
 	void ResetInput();
+	// Game Functions
+	void PlayerRaycast();
+	float PlayerMovement(float dt);
+	void PlayerDirection();
+	float CheckForWinLose(float dt);
+	//score
+	float CheckTarget();
 private:
+	// Level
 	std::vector<std::pair<sf::RectangleShape, ShapeType>> lines;
+	// Level building variables
 	sf::RectangleShape previewLine;
 	bool previewLineEnabled = false;
 	sf::Event mousePrevEvent;
 	ShapeType currentMode = ShapeType::None;
-	//
+	//	Event related variables
 	bool leftMouseButtonClicked = false;
 	bool rightMouseButtonClicked = false;
-	//
 	bool isImGuiHovered = false;
+	bool shoot = false; //space as key
+	bool up = false, down = false, left = false, right = false; // W S A D
+	bool rotateLeft = false, rotateRight = false;
+	// Game related variable
 	bool runSimulation = false;
-	//
 	std::string lastLoadedFile = "";
+	int lastTargetIndex = -1;
+	int playerIndex = -1;
+	const float movementValue = 500.0f;
+	const float rotationForce = 100.0f;
+	sf::RectangleShape playerDirection;
+
+	//Debug
+	bool debugLine = false;
+	float timer = 0.0f;
 };
 
 namespace sf {

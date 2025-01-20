@@ -16,9 +16,8 @@ int main()
 
         ImGui::SFML::Update(window,timer = clock.restart());
         levelData.ResetInput();
-        if(levelData.IsSimulationRunning())
-        levelData.Update(timer.asSeconds());
         ImGui::Begin("Hello, world!");
+
         for (auto event = sf::Event(); window.pollEvent(event);)
         {
             ImGui::SFML::ProcessEvent(window, event);
@@ -29,6 +28,9 @@ int main()
             }
             levelData.CheckWindowEvent(event,window);
         }
+
+        if(levelData.IsSimulationRunning())
+        levelData.Update(timer.asSeconds());
         if(!levelData.IsSimulationRunning())
         levelData.SelectModWindow();
         levelData.SaveLoadWindow();
