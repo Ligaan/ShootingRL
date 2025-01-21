@@ -96,7 +96,7 @@ void train(float dt, sf::RenderWindow& window)
 
 				// Create an image from the texture
 				sf::Image screenshot = texture.copyToImage();
-
+				step_return.state = env.env->prevStep;
 				step_return.next_state = env.env->prevStep = screenshot;
 
 
@@ -140,6 +140,8 @@ void train(float dt, sf::RenderWindow& window)
 				//path = Engine.FileIO().GetPath(bee::FileIO::Directory::Asset, path);
 				//agent->checkpoint(path);
 			}
+
+			ImGui::End();
 			window.clear();
 			env.env->Draw(window);
 			ImGui::SFML::Render(window);
