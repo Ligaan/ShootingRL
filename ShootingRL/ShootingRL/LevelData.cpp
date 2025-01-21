@@ -311,6 +311,7 @@ void LevelData::RunSimulation()
 		// Use the file name from the input field to save
 		LoadData(std::string(lastLoadedFile));  // Pass the file name to the Save function
 	}
+	ImGui::Checkbox("Start Training", &useAI);
 }
 
 void LevelData::ResetInput()
@@ -579,4 +580,9 @@ float LevelData::CheckTarget()
 		}
 		}
 	}
+}
+
+bool LevelData::IsTraining()
+{
+	return useAI;
 }

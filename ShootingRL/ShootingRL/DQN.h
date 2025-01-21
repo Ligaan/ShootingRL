@@ -28,11 +28,12 @@ public:
 
 	QNetworkImpl(int input_channels, int action_size);
 	QNetworkImpl() {};
+	int num_flat_features(torch::Tensor x);
 	torch::Tensor forward(torch::Tensor x);
 	void resetNetwork();
 
-	torch::nn::Linear fc1{ nullptr }, fc2{ nullptr }/*, fc3{ nullptr }*/;
-	torch::nn::Conv2d conv1{ nullptr }, conv2{ nullptr }, conv3{ nullptr };
+	torch::nn::Linear fc1{ nullptr }, fc2{ nullptr }, fc3{ nullptr };
+	torch::nn::Conv2d conv1{ nullptr }, conv2{ nullptr }/*, conv3{ nullptr }*/;
 };
 
 TORCH_MODULE(QNetwork);

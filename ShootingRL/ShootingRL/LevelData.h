@@ -68,7 +68,7 @@ public:
 	float CheckForWinLose(float dt);
 	//score
 	float CheckTarget();
-
+	bool IsTraining();
 	sf::Image prevStep;
 	std::string lastLoadedFile = "";
 private:

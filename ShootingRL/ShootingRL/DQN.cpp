@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <random>
 #include <vector>
@@ -22,8 +23,8 @@ DQN::DQN(int state_size, int action_size, int seed)
     this->action_size = action_size;
     this->seed = seed;
 
-    q_network = QNetwork(state_size, action_size, seed);
-    fixed_network = QNetwork(state_size, action_size, seed);
+    q_network = QNetwork(4, action_size, seed);
+    fixed_network = QNetwork(4, action_size, seed);
     auto adamOptions = torch::optim::AdamOptions(0.0001);
     optimizer = new torch::optim::Adam(q_network->parameters(), adamOptions);
     buffer = ReplayBuffer(state_size, action_size, BUFFER_SIZE, BATCH_SIZE, seed);
@@ -77,6 +78,22 @@ torch::Tensor imageToTensor(const sf::Image& image) {
     return tensor.clone(); // Clone to ensure tensor owns its memory
 }
 
+torch::Tensor convertToTensor(const sf::Image& image) {
+    const sf::Uint8* pixels = image.getPixelsPtr();
+    unsigned int width = image.getSize().x;
+    unsigned int height = image.getSize().y;
+
+    // Convert the image data to a PyTorch tensor
+    torch::Tensor tensor_image = torch::from_blob(
+        const_cast<sf::Uint8*>(pixels), { 1, 4, height, width }, torch::kByte
+    );
+
+    // Normalize to [0, 1] by converting to float and dividing by 255
+    tensor_image = tensor_image.to(torch::kFloat).div(255);
+
+    return tensor_image;
+}
+
 int DQN::act(const sf::Image& image, float epsilon)
 {
     torch::NoGradGuard no_grad;
@@ -85,9 +102,12 @@ int DQN::act(const sf::Image& image, float epsilon)
     float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     if (r > epsilon)
     {
-        torch::Tensor t_state = imageToTensor(image);
+        torch::Tensor t_state = convertToTensor(image);
         torch::Tensor action_values;
 
+        std::cout << "Input tensor shape: " << t_state.sizes() << std::endl;
+        //file.close();
+        //////
         action_values = q_network->forward(t_state);
         action = static_cast<int>(torch::argmax(action_values).item().toInt() % action_size);
         currentStep++;
@@ -173,16 +193,35 @@ QNetworkImpl::QNetworkImpl(int input_channels, int action_size, int seed)
     torch::manual_seed(seed);
 
     // Convolutional layers
-    conv1 = register_module("conv1", torch::nn::Conv2d(torch::nn::Conv2dOptions(input_channels, 32, 8).stride(4))); // 32 filters, kernel size 8x8, stride 4
-    conv2 = register_module("conv2", torch::nn::Conv2d(torch::nn::Conv2dOptions(32, 64, 4).stride(2)));            // 64 filters, kernel size 4x4, stride 2
-    conv3 = register_module("conv3", torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 64, 3).stride(1)));            // 64 filters, kernel size 3x3, stride 1
+    //conv1 = register_module("conv1", torch::nn::Conv2d(torch::nn::Conv2dOptions(1, 6, 3))); // 32 filters, kernel size 8x8, stride 4
+    //conv2 = register_module("conv2", torch::nn::Conv2d(torch::nn::Conv2dOptions(32, 64, 4).stride(2)));            // 64 filters, kernel size 4x4, stride 2
+    //conv3 = register_module("conv3", torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 64, 3).stride(1)));            // 64 filters, kernel size 3x3, stride 1
+
+    //// Fully connected layers
+    //fc1 = register_module("fc1", torch::nn::Linear(64 * 9 * 9, 512));  // Adjust the size based on input image dimensions
+    //fc2 = register_module("fc2", torch::nn::Linear(512, action_size));
+
+    conv1 = register_module("conv1", torch::nn::Conv2d(torch::nn::Conv2dOptions(4, 6, 3))); // 32 filters, kernel size 8x8, stride 4
+    conv2 = register_module("conv2", torch::nn::Conv2d(torch::nn::Conv2dOptions(6, 16, 3)));            // 64 filters, kernel size 4x4, stride 2
 
     // Fully connected layers
-    fc1 = register_module("fc1", torch::nn::Linear(64 * 9 * 9, 512));  // Adjust the size based on input image dimensions
-    fc2 = register_module("fc2", torch::nn::Linear(512, action_size));
+    fc1 = register_module("fc1", torch::nn::Linear(torch::nn::LinearOptions(16 * 198 * 198, 120)));  // Adjust the size based on input image dimensions
+    fc2 = register_module("fc2", torch::nn::Linear(torch::nn::LinearOptions(120, 84)));
+    fc3 = register_module("fc3", torch::nn::Linear(torch::nn::LinearOptions(84, 7)));
+
 }
 
 QNetworkImpl::QNetworkImpl(int input_channels, int action_size) { QNetwork(input_channels, action_size, 0); }
+
+int QNetworkImpl::num_flat_features(torch::Tensor x)
+{
+    auto sz = x.sizes().slice(1);  // All dimensions except the batch dimension
+    int num_features = 1;
+    for (auto s : sz) {
+        num_features *= s;
+    }
+    return num_features;
+}
 
 torch::Tensor QNetworkImpl::forward(torch::Tensor x)
 {
@@ -191,17 +230,41 @@ torch::Tensor QNetworkImpl::forward(torch::Tensor x)
     x = fc2(x);
     x = torch::relu(x);
     x = fc3(x);*/
+
+
     // Apply convolutional layers with ReLU activation
-    x = torch::relu(conv1(x));
-    x = torch::relu(conv2(x));
-    x = torch::relu(conv3(x));
+    //auto input = torch::randn({ 1, 1, 32, 32 });
+    //x = torch::relu(conv1->forward(input));
+    //x = torch::relu(conv2(x));
+    //x = torch::relu(conv3(x));
 
-    // Flatten the tensor for fully connected layers
-    x = x.view({ x.size(0), -1 }); // Flatten [Batch, Channels, Height, Width] -> [Batch, Features]
+    //// Flatten the tensor for fully connected layers
+    //x = x.view({ x.size(0), -1 }); // Flatten [Batch, Channels, Height, Width] -> [Batch, Features]
 
-    // Fully connected layers
-    x = torch::relu(fc1(x));
-    x = fc2(x);
+    //// Fully connected layers
+    //x = torch::relu(fc1(x));
+    //x = fc2(x);
+
+    auto input = torch::randn({ 1, 4, 800, 800 });
+
+    // Pass through conv1, relu, and max pooling
+    x = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({ 2, 2 }))->forward(torch::relu(conv1->forward(input)));
+
+    // Pass through conv2, relu, and max pooling
+    x = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({ 2, 2 }))->forward(torch::relu(conv2->forward(x)));
+
+    // Flatten the tensor for the fully connected layers
+    x = x.view({ -1, num_flat_features(x) });
+
+    // Pass through the fully connected layers with ReLU activations
+    x = torch::relu(fc1->forward(x));
+    x = torch::relu(fc2->forward(x));
+
+    // Output layer (no activation here, softmax will be applied later)
+    x = fc3->forward(x);
+
+    // Apply softmax to the output (convert logits to probabilities)
+    x = torch::softmax(x, /*dim=*/1);  // Apply softmax along the second dimension (action dimension)
 
     return x;
 }

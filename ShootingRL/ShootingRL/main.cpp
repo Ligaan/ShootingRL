@@ -15,7 +15,7 @@ struct TrainingEnv
 	float Score = 0.0f;
 	float step_score = 0.0f;
 	int steps = 0;
-	bool done = false;
+	bool done = true;
 };
 
 DQN* agent;
@@ -50,11 +50,8 @@ const float eps_start = 0.9f;
 const float eps_decay = /*0.999f;*/ 500000;
 const float eps_min = 0.01f;
 
-//{
-//        train(dt);
-//}
 
-void train(float dt,sf::RenderWindow& window)
+void train(float dt, sf::RenderWindow& window)
 {
 	Action action;
 
@@ -73,53 +70,50 @@ void train(float dt,sf::RenderWindow& window)
 		done = env.done;
 		if (!done)
 		{
-			for (int i = 0; i < nEnv; i++)
+			if (!env.done)
 			{
-				if (!env.done)
+				eps = eps_min + (eps_start - eps_min) * exp(-1. * stepsDone / eps_decay);
+				action = static_cast<Action>(agent->act(
+					env.env->prevStep, eps));
+				step_return = env.env->Update(/*dt*/ 0.005f, action);
+
+				if (!env.env->IsSimulationRunning())
+					env.env->SelectModWindow();
+				env.env->SaveLoadWindow();
+				env.env->RunSimulation();
+				ImGui::End();
+
+				window.clear();
+				env.env->Draw(window);
+				ImGui::SFML::Render(window);
+				window.display();
+
+				sf::Texture texture;
+
+				// Capture the window contents to the texture
+				texture.create(window.getSize().x, window.getSize().y);
+				texture.update(window);
+
+				// Create an image from the texture
+				sf::Image screenshot = texture.copyToImage();
+
+				step_return.next_state = env.env->prevStep = screenshot;
+
+
+				// agent->addToExperienceBuffer(envs[i].env->StepReturnToFullFLoatStepReturn(step_return));
+				steps.push_back(step_return);
+				env.steps++;
+				env.step_score = step_return.reward;
+				env.Score += step_return.reward;
+
+				step_score = step_return.reward;
+
+				if (step_return.terminated || env.steps >= max_steps)
 				{
-					eps = eps_min + (eps_start - eps_min) * exp(-1. * stepsDone / eps_decay);
-					action = static_cast<Action>(agent->act(
-						env.env->prevStep, eps));
-					step_return = env.env->Update(/*dt*/ 0.005f, action);
-
-					if (!env.env->IsSimulationRunning())
-						env.env->SelectModWindow();
-					env.env->SaveLoadWindow();
-					env.env->RunSimulation();
-					ImGui::End();
-
-					window.clear();
-					env.env->Draw(window);
-					ImGui::SFML::Render(window);
-					window.display();
-
-					sf::Texture texture;
-
-					// Capture the window contents to the texture
-					texture.create(window.getSize().x, window.getSize().y);
-					texture.update(window);
-
-					// Create an image from the texture
-					sf::Image screenshot = texture.copyToImage();
-
-					step_return.next_state = env.env->prevStep = screenshot;
-
-
-					// agent->addToExperienceBuffer(envs[i].env->StepReturnToFullFLoatStepReturn(step_return));
-					steps.push_back(step_return);
-					/*envs[i].steps++;
-					envs[i].step_score = step_return.reward;
-					envs[i].Score += step_return.reward;*/
-
-					if (i == 0) step_score = step_return.reward;
-
-					if (step_return.terminated || env.steps >= max_steps)
-					{
-						env.done = true;
-					}
-
-					stepsDone++;
+					env.done = true;
 				}
+
+				stepsDone++;
 			}
 			agent->addToExperienceBufferInBulk(steps);
 			agent->step();
@@ -144,8 +138,23 @@ void train(float dt,sf::RenderWindow& window)
 				std::cout << mean_score << "\n";
 				path = "Checkpoints/" + std::to_string(episode);
 				//path = Engine.FileIO().GetPath(bee::FileIO::Directory::Asset, path);
-				agent->checkpoint(path);
+				//agent->checkpoint(path);
 			}
+			window.clear();
+			env.env->Draw(window);
+			ImGui::SFML::Render(window);
+			window.display();
+
+			sf::Texture texture;
+
+			// Capture the window contents to the texture
+			texture.create(window.getSize().x, window.getSize().y);
+			texture.update(window);
+
+			// Create an image from the texture
+			sf::Image screenshot = texture.copyToImage();
+
+			step_return.next_state = env.env->prevStep = screenshot;
 		}
 	}
 	else
@@ -161,7 +170,7 @@ void train(float dt,sf::RenderWindow& window)
 
 int main()
 {
-	agent = new DQN(6, 5, 0);  //(8, 4, 0);
+	agent = new DQN(4, 7, 0);  //(8, 4, 0);
 	env = TrainingEnv{};
 	env.env = new LevelData();
 	//////////////
@@ -170,7 +179,7 @@ int main()
 	if (!ImGui::SFML::Init(window))
 		return -1;
 
-	LevelData levelData;
+	//LevelData levelData;
 
 	sf::Clock clock;
 	sf::Time timer;
@@ -178,7 +187,7 @@ int main()
 	{
 
 		ImGui::SFML::Update(window, timer = clock.restart());
-		levelData.ResetInput();
+		env.env->ResetInput();
 		ImGui::Begin("Hello, world!");
 
 		for (auto event = sf::Event(); window.pollEvent(event);)
@@ -189,32 +198,37 @@ int main()
 			{
 				window.close();
 			}
-			levelData.CheckWindowEvent(event, window);
+			env.env->CheckWindowEvent(event, window);
 		}
 
-		if (!levelData.IsSimulationRunning())
-			levelData.SelectModWindow();
-		levelData.SaveLoadWindow();
-		levelData.RunSimulation();
-		ImGui::End();
+		if (!env.env->IsTraining()) {
+			if (!env.env->IsSimulationRunning())
+				env.env->SelectModWindow();
+			env.env->SaveLoadWindow();
+			env.env->RunSimulation();
+			ImGui::End();
 
-		window.clear();
-		levelData.Draw(window);
-		ImGui::SFML::Render(window);
-		window.display();
+			window.clear();
+			env.env->Draw(window);
+			ImGui::SFML::Render(window);
+			window.display();
 
 
-		sf::Texture texture;
+			sf::Texture texture;
 
-		// Capture the window contents to the texture
-		texture.create(window.getSize().x, window.getSize().y);
-		texture.update(window);
+			// Capture the window contents to the texture
+			texture.create(window.getSize().x, window.getSize().y);
+			texture.update(window);
 
-		// Create an image from the texture
-		sf::Image screenshot = texture.copyToImage();
+			// Create an image from the texture
+			sf::Image screenshot = texture.copyToImage();
 
-		if (levelData.IsSimulationRunning())
-			levelData.Update(timer.asSeconds(),Action::Down);
+			if (env.env->IsSimulationRunning())
+				env.env->Update(timer.asSeconds(), Action::Down);
+		}
+		else {
+			train(timer.asSeconds(), window);
+		}
 
 	}
 
