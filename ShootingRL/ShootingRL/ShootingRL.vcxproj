@@ -157,13 +157,16 @@
     <ClCompile Include="..\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\external\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="DQN.cpp" />
     <ClCompile Include="LevelData.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\imgui\imconfig-SFML.h" />
     <ClInclude Include="..\external\imgui\imconfig.h" />
+    <ClInclude Include="DQN.h" />
     <ClInclude Include="EnviromentObjectsType.h" />
+    <ClInclude Include="EnvironmentReturnValues.h" />
     <ClInclude Include="LevelData.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>

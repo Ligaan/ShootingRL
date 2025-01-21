@@ -14,6 +14,27 @@
 
 #include "EnviromentObjectsType.h"
 
+enum class Action
+{
+	Up,
+	Down,
+	Left,
+	Right,
+	TurnLeft,
+	TurnRight,
+	Shoot
+};
+
+struct Step_return
+{
+	sf::Image state;
+	Action action;
+	sf::Image next_state;
+	float reward;
+	bool terminated;
+	bool truncated;
+};
+
 class LevelData
 {
 public:
@@ -22,7 +43,7 @@ public:
 	void SaveData(const std::string& filename);
 	void LoadData(const std::string& filename);
 	// Core Functions
-	void Update(float dt);
+	Step_return Update(float dt,Action action);
 	void Draw(sf::RenderWindow& window);
 	bool IsSimulationRunning();
 	// Level Editing Functions
@@ -42,10 +63,14 @@ public:
 	// Game Functions
 	void PlayerRaycast();
 	float PlayerMovement(float dt);
+	float AIMovement(float dt, Action action);
 	void PlayerDirection();
 	float CheckForWinLose(float dt);
 	//score
 	float CheckTarget();
+
+	sf::Image prevStep;
+	std::string lastLoadedFile = "";
 private:
 	// Level
 	std::vector<std::pair<sf::RectangleShape, ShapeType>> lines;
@@ -63,7 +88,6 @@ private:
 	bool rotateLeft = false, rotateRight = false;
 	// Game related variable
 	bool runSimulation = false;
-	std::string lastLoadedFile = "";
 	int lastTargetIndex = -1;
 	int playerIndex = -1;
 	const float movementValue = 500.0f;
@@ -84,6 +108,8 @@ private:
 	float hitStaticTargetReward = 100.0f;
 	float hitMovingTargetReward = 200.0f;
 	float missTargetReward = -10.0f;
+	//Training
+	bool useAI = false;
 };
 
 namespace sf {

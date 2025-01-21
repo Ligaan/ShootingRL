@@ -36,18 +36,22 @@ void LevelData::LoadData(const std::string& filename)
 		lines[playerIndex].first.setOrigin(lines[playerIndex].first.getSize() / 2.0f);
 	}
 }
-void LevelData::Update(float dt)
+Step_return LevelData::Update(float dt, Action action)
 {
+	Step_return step_return = {};
 	playerIndex = FindPlayerIndex();
 	if (playerIndex != -1) {
-		if (shoot) {
-			PlayerRaycast();
-			CheckTarget();
-		}
-		PlayerMovement(dt);
+		if (!useAI)
+			PlayerMovement(dt);
+		else
+		step_return.reward+=AIMovement(dt, action);
 		PlayerDirection();
-		CheckForWinLose(dt);
+		step_return.reward += CheckForWinLose(dt);
+		step_return.action = action;
+		step_return.truncated = false;
+		step_return.terminated = !runSimulation;
 	}
+	return step_return;
 }
 void LevelData::Draw(sf::RenderWindow& window)
 {
@@ -396,6 +400,11 @@ void LevelData::PlayerRaycast()
 
 float LevelData::PlayerMovement(float dt)
 {
+	if (shoot) {
+		PlayerRaycast();
+		CheckTarget();
+	}
+
 	float score = 0.0f;
 	float originalOrientation = lines[playerIndex].first.getRotation();
 	sf::Vector2f originalPosition = lines[playerIndex].first.getPosition();
@@ -422,6 +431,63 @@ float LevelData::PlayerMovement(float dt)
 	if (rotateRight) {
 		lines[playerIndex].first.setRotation(lines[playerIndex].first.getRotation() - 1.0f * rotationForce * dt);
 		score += rotateReward;
+	}
+
+	for (auto line : lines) {
+		if (line.second != ShapeType::Player) {
+			if (Physics::RectanglesIntersect(lines[playerIndex].first, line.first)) {
+				score += collideReward;
+				lines[playerIndex].first.setPosition(originalPosition);
+				lines[playerIndex].first.setRotation(originalOrientation);
+				break;
+			}
+		}
+	}
+	return score;
+}
+
+float LevelData::AIMovement(float dt, Action action)
+{
+	float score = 0.0f;
+	float originalOrientation = lines[playerIndex].first.getRotation();
+	sf::Vector2f originalPosition = lines[playerIndex].first.getPosition();
+
+	switch (action) {
+	case Action::Up: {
+		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(0.0, -1.0f) * movementValue * dt);
+		score += moveReward;
+		break;
+	}
+	case Action::Down: {
+		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(0.0, 1.0f) * movementValue * dt);
+		score += moveReward;
+		break;
+	}
+	case Action::Left: {
+		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(-1.0, 0.0f) * movementValue * dt);
+		score += moveReward;
+		break;
+	}
+	case Action::Right: {
+		lines[playerIndex].first.setPosition(lines[playerIndex].first.getPosition() + sf::Vector2f(1.0, 0.0f) * movementValue * dt);
+		score += moveReward;
+		break;
+	}
+	case Action::TurnLeft: {
+		lines[playerIndex].first.setRotation(lines[playerIndex].first.getRotation() + 1.0f * rotationForce * dt);
+		score += rotateReward;
+		break;
+	}
+	case Action::TurnRight: {
+		lines[playerIndex].first.setRotation(lines[playerIndex].first.getRotation() - 1.0f * rotationForce * dt);
+		score += rotateReward;
+		break;
+	}
+	case Action::Shoot: {
+		PlayerRaycast();
+		score += CheckTarget();
+		break;
+	}
 	}
 
 	for (auto line : lines) {
