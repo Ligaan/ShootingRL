@@ -1,4 +1,5 @@
 #include "LevelData.h"
+#include "torch/torch.h"
 
 int main()
 {
@@ -50,10 +51,10 @@ int main()
                 texture.update(window);
 
                 // Create an image from the texture
-                sf::Image screenshot = texture.copyToImage();
+                //sf::Image screenshot = texture.copyToImage();
 
                 // Save the image to a file (optional)
-                screenshot.saveToFile("../assets/screenshot.png");
+                //screenshot.saveToFile("../assets/screenshot.png");
             }
         }
 
