@@ -115,8 +115,7 @@ void DQN::learn(Tensor_step_return experiences)
     }
 
     torch::Tensor Q_target = experiences.rewards + (GAMMA * max_action_values * (1 - experiences.dones));
-    torch::Tensor Q_expected = q_network->forward(experiences.states)/*.gather(1, experiences.actions.to(torch::kLong).view({ -1, 1 }))*/;
-    std::cout << experiences.states.sizes() <<"\n";
+    torch::Tensor Q_expected = q_network->forward(experiences.states).gather(1, experiences.actions.to(torch::kLong).view({ -1, 1 }));
     torch::Tensor loss = torch::nn::functional::mse_loss(Q_expected, Q_target);
     // std::cout << Q_target << "\n" << Q_expected << "\n" << loss << "\n";
     optimizer->zero_grad();
@@ -191,10 +190,9 @@ int QNetworkImpl::num_flat_features(torch::Tensor x)
 
 torch::Tensor QNetworkImpl::forward(torch::Tensor x)
 {
-    auto input = torch::randn({ 1, 4, 800, 800 });
 
     // Pass through conv1, relu, and max pooling
-    x = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({ 2, 2 }))->forward(torch::relu(conv1->forward(input)));
+    x = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({ 2, 2 }))->forward(torch::relu(conv1->forward(x)));
 
     // Pass through conv2, relu, and max pooling
     x = torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({ 2, 2 }))->forward(torch::relu(conv2->forward(x)));
@@ -271,28 +269,19 @@ Tensor_step_return ReplayBuffer::sample()
     // Float_State state;
     torch::Tensor s_tensor;
 
-    torch::Tensor tensor_states = torch::empty({ 0, 4, 800, 800 });
-    torch::Tensor tensor_next_states = torch::empty({ 0, 4, 800, 800 });
+    std::vector<torch::Tensor> currentStates;
+    std::vector<torch::Tensor> nextStates;
 
+    //torch::stack(tensors, 0);
 
     int i = 0;
     for (auto& experience : batch)
     {
         i++;
 
-        // state = StateToFloat_State(experience.state);
-        s_tensor = convertToTensor(experience.state); /*torch::from_blob((float*)(experience.data.data()), state_size);*/
-        if (i > 1)
-            tensor_states = torch::cat({ tensor_states, s_tensor.unsqueeze(0)}, 0);
-        else
-            tensor_states = torch::cat({ s_tensor.unsqueeze(0)}, 0);
+        currentStates.push_back(convertToTensor(experience.state).squeeze(0));
 
-        // state = StateToFloat_State(experience.next_state);
-        s_tensor = convertToTensor(experience.next_state);/*torch::from_blob((float*)(experience.data.data() + state_size), state_size);*/
-        if (i > 1)
-            tensor_next_states = torch::cat({ tensor_next_states, s_tensor.unsqueeze(0) }, 0);
-        else
-            tensor_next_states = s_tensor.unsqueeze(0);
+        nextStates.push_back(convertToTensor(experience.next_state).squeeze(0));
 
         rewards.push_back(experience.reward);
         actions.push_back(static_cast<float>(experience.action));
@@ -300,8 +289,8 @@ Tensor_step_return ReplayBuffer::sample()
         if (i == BATCH_SIZE) break;
     }
 
-    tensor.states = tensor_states;
-    tensor.next_states = tensor_next_states;
+    tensor.states = torch::stack(currentStates, 0);
+    tensor.next_states = torch::stack(nextStates, 0);
     tensor.actions = torch::from_blob((float*)(actions.data()), actions.size()).unsqueeze(1);
     tensor.rewards = torch::from_blob((float*)(rewards.data()), rewards.size()).unsqueeze(1);
     tensor.dones = torch::from_blob((float*)(dones.data()), dones.size()).unsqueeze(1);
