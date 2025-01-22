@@ -14,16 +14,7 @@
 
 #include "EnviromentObjectsType.h"
 
-enum class Action
-{
-	Up,
-	Down,
-	Left,
-	Right,
-	TurnLeft,
-	TurnRight,
-	Shoot
-};
+
 
 struct Step_return
 {
@@ -43,7 +34,7 @@ public:
 	void SaveData(const std::string& filename);
 	void LoadData(const std::string& filename);
 	// Core Functions
-	Step_return Update(float dt,Action action);
+	Optimize_Step_return Update(float dt,Action action);
 	void Draw(sf::RenderWindow& window);
 	bool IsSimulationRunning();
 	// Level Editing Functions

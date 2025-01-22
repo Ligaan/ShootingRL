@@ -36,9 +36,9 @@ void LevelData::LoadData(const std::string& filename)
 		lines[playerIndex].first.setOrigin(lines[playerIndex].first.getSize() / 2.0f);
 	}
 }
-Step_return LevelData::Update(float dt, Action action)
+Optimize_Step_return LevelData::Update(float dt, Action action)
 {
-	Step_return step_return = {};
+	Optimize_Step_return step_return = {};
 	playerIndex = FindPlayerIndex();
 	if (playerIndex != -1) {
 		if (!useAI)

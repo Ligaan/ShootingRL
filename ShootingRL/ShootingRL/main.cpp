@@ -60,11 +60,11 @@ void train(float dt, sf::RenderWindow& window)
 	static float score = 0;
 	static int t = max_steps;
 
-	std::vector<Step_return> steps;
+	std::vector<Optimize_Step_return> steps;
 	//env.env->StateToFloat_State(envs[i].env->squizzForNetwork(envs[i].env->currentState))
 	//State state;
 	bool done = true;
-	Step_return step_return;
+	Optimize_Step_return step_return;
 	if (episode <= max_episodes)
 	{
 		done = env.done;
@@ -96,9 +96,9 @@ void train(float dt, sf::RenderWindow& window)
 
 				// Create an image from the texture
 				sf::Image screenshot = texture.copyToImage();
-				step_return.state = env.env->prevStep;
-				step_return.next_state = env.env->prevStep = screenshot;
-
+				step_return.state = convertToTensor(env.env->prevStep);
+				env.env->prevStep = screenshot;
+				step_return.next_state = convertToTensor(env.env->prevStep);
 
 				// agent->addToExperienceBuffer(envs[i].env->StepReturnToFullFLoatStepReturn(step_return));
 				steps.push_back(step_return);
@@ -155,17 +155,12 @@ void train(float dt, sf::RenderWindow& window)
 
 			// Create an image from the texture
 			sf::Image screenshot = texture.copyToImage();
-
-			step_return.next_state = env.env->prevStep = screenshot;
+			env.env->prevStep = screenshot;
+			//step_return.next_state = convertToTensor(env.env->prevStep);
 		}
 	}
 	else
 	{
-		/*for (auto& env : envs)
-		{
-			env.env->envState = EnvironmentState::Run;
-			env.env->player = Player::Ai;
-		}*/
 		agent->q_network->eval();
 	}
 }
@@ -180,8 +175,6 @@ int main()
 	window.setFramerateLimit(144);
 	if (!ImGui::SFML::Init(window))
 		return -1;
-
-	//LevelData levelData;
 
 	sf::Clock clock;
 	sf::Time timer;

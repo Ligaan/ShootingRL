@@ -15,7 +15,7 @@ const int BATCH_SIZE = /*128*/ 64;
 const float GAMMA = 0.99f;
 float TAU = 1e-3;
 float LR = 5e-4;
-int UPDATE_EVERY = 32; /*16;*/
+int UPDATE_EVERY = 108; /*16;*/
 
 DQN::DQN(int state_size, int action_size, int seed)
 {
@@ -46,13 +46,13 @@ void DQN::step()
     }
 }
 
-void DQN::addToExperienceBuffer(Step_return value)
+void DQN::addToExperienceBuffer(Optimize_Step_return value)
 {
     buffer.add(value);  //(state, action, reward, next_state, done);
     timestep++;
 }
 
-void DQN::addToExperienceBufferInBulk(std::vector<Step_return>& values)
+void DQN::addToExperienceBufferInBulk(std::vector<Optimize_Step_return>& values)
 {
     timestep += values.size();
     buffer.addBulk(values);
@@ -237,13 +237,13 @@ ReplayBuffer::ReplayBuffer(int action_size, int buffer_size, int batch_size)
     this->seed = seed;
 }
 
-void ReplayBuffer::add(Step_return experience)
+void ReplayBuffer::add(Optimize_Step_return experience)
 {
     experiences.push_back(experience);
     if (experiences.size() > buffer_size) experiences.erase(experiences.begin());
 }
 
-void ReplayBuffer::addBulk(std::vector<Step_return>& experiences)
+void ReplayBuffer::addBulk(std::vector<Optimize_Step_return>& experiences)
 {
     this->experiences.insert(this->experiences.end(), std::make_move_iterator(experiences.begin()),
         std::make_move_iterator(experiences.end()));
@@ -257,7 +257,7 @@ void ReplayBuffer::addBulk(std::vector<Step_return>& experiences)
 Tensor_step_return ReplayBuffer::sample()
 {
     Tensor_step_return tensor;
-    std::vector<Step_return> batch;
+    std::vector<Optimize_Step_return> batch;
     std::sample(experiences.begin(), experiences.end(), std::back_inserter(batch), batch_size,
         std::mt19937{ std::random_device{}() });
     std::shuffle(batch.begin(), batch.end(), std::mt19937{ std::random_device{}() });
@@ -279,9 +279,9 @@ Tensor_step_return ReplayBuffer::sample()
     {
         i++;
 
-        currentStates.push_back(convertToTensor(experience.state).squeeze(0));
+        currentStates.push_back(experience.state.squeeze(0));
 
-        nextStates.push_back(convertToTensor(experience.next_state).squeeze(0));
+        nextStates.push_back(experience.next_state.squeeze(0));
 
         rewards.push_back(experience.reward);
         actions.push_back(static_cast<float>(experience.action));

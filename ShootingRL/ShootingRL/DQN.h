@@ -8,6 +8,7 @@
 #include <string>
 
 #include "EnvironmentReturnValues.h"
+#include "EnviromentObjectsType.h"
 #include "SFML/Graphics.hpp"
 #include "LevelData.h"
 
@@ -45,8 +46,8 @@ public:
 	ReplayBuffer(int action_size, int buffer_size, int batch_size);
 	ReplayBuffer() {};
 
-	void add(Step_return experience);  //(State state, Action action, float reward, State next_state, bool done);
-	void addBulk(std::vector<Step_return>& experiences);
+	void add(Optimize_Step_return experience);  //(State state, Action action, float reward, State next_state, bool done);
+	void addBulk(std::vector<Optimize_Step_return>& experiences);
 	Tensor_step_return sample();
 
 	int state_size;
@@ -54,7 +55,7 @@ public:
 	int buffer_size;
 	int batch_size;
 
-	std::vector<Step_return> experiences;
+	std::vector<Optimize_Step_return> experiences;
 	int seed;
 
 	std::vector<float> actions;
@@ -68,8 +69,8 @@ public:
 	DQN(int state_size, int action_size);
 	DQN() {};
 	void step();  //(State state, Action action, float reward, State next_state, bool done);
-	void addToExperienceBuffer(Step_return value);
-	void addToExperienceBufferInBulk(std::vector<Step_return>& values);
+	void addToExperienceBuffer(Optimize_Step_return value);
+	void addToExperienceBufferInBulk(std::vector<Optimize_Step_return>& values);
 	int act(const sf::Image& image, float epsilon);
 	void learn(Tensor_step_return experiences);
 	void update_fixed_network(QNetwork& local_model, QNetwork& target_model);
@@ -89,3 +90,4 @@ public:
 	int currentStep = 0;
 };
 
+torch::Tensor convertToTensor(const sf::Image& image);
